@@ -1,0 +1,15 @@
+C:\Users\diona\Desktop\RedTeamC2\agent\src\bin\Debug\net9.0-windows\Agent.exe
+C:\Users\diona\Desktop\RedTeamC2\agent\src\bin\Debug\net9.0-windows\Agent.deps.json
+C:\Users\diona\Desktop\RedTeamC2\agent\src\bin\Debug\net9.0-windows\Agent.runtimeconfig.json
+C:\Users\diona\Desktop\RedTeamC2\agent\src\bin\Debug\net9.0-windows\Agent.dll
+C:\Users\diona\Desktop\RedTeamC2\agent\src\bin\Debug\net9.0-windows\Agent.pdb
+C:\Users\diona\Desktop\RedTeamC2\agent\src\obj\Debug\net9.0-windows\Agent.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\diona\Desktop\RedTeamC2\agent\src\obj\Debug\net9.0-windows\Agent.AssemblyInfoInputs.cache
+C:\Users\diona\Desktop\RedTeamC2\agent\src\obj\Debug\net9.0-windows\Agent.AssemblyInfo.cs
+C:\Users\diona\Desktop\RedTeamC2\agent\src\obj\Debug\net9.0-windows\Agent.csproj.CoreCompileInputs.cache
+C:\Users\diona\Desktop\RedTeamC2\agent\src\obj\Debug\net9.0-windows\Agent.sourcelink.json
+C:\Users\diona\Desktop\RedTeamC2\agent\src\obj\Debug\net9.0-windows\Agent.dll
+C:\Users\diona\Desktop\RedTeamC2\agent\src\obj\Debug\net9.0-windows\refint\Agent.dll
+C:\Users\diona\Desktop\RedTeamC2\agent\src\obj\Debug\net9.0-windows\Agent.pdb
+C:\Users\diona\Desktop\RedTeamC2\agent\src\obj\Debug\net9.0-windows\Agent.genruntimeconfig.cache
+C:\Users\diona\Desktop\RedTeamC2\agent\src\obj\Debug\net9.0-windows\ref\Agent.dll

