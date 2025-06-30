@@ -102,7 +102,7 @@
         .morph-section.active { display: block; animation: fadein 0.5s; }
         @keyframes fadein { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
         .card {
-            background: var(--panel); border-radius: 14px; box-shadow: 0 2px 12px #0003;
+            background: var(--panel); border-radius: 14px; box-shadow: 0 2px 12px #D7263140;
             padding: 22px 28px; margin-bottom: 24px;
             transition: box-shadow 0.2s, transform 0.2s;
         }
@@ -127,8 +127,8 @@
             display: inline-block; padding: 2px 10px; border-radius: 8px; font-size: 0.95rem;
             background: #222; color: #fff; margin-left: 8px;
         }
-        .status-online { background: #00B8D9; color: #18181f; }
-        .status-offline { background: #D72631; color: #fff; }
+        .status-online { background: var(--accent); color: #18181f; }
+        .status-offline { background: var(--primary); color: #fff; }
         .agent-actions button { margin-right: 8px; }
         .results-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(30,30,30,0.97); z-index: 1000; display: none; align-items: center; justify-content: center; }
         .results-modal.active { display: flex; }
