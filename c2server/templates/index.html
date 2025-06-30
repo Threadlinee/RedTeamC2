@@ -3,236 +3,145 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RedTeamC2 Futuristic UI</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <title>RedTeamC2 Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&family=Fira+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.socket.io/4.4.1/socket.io.min.js"></script>
     <style>
-        /* Futuristic neon-glow theme */
+        :root {
+            --bg: #1E1E1E;
+            --panel: #23232b;
+            --primary: #D72631;
+            --accent: #00B8D9;
+            --alert: #FF5722;
+            --text: #E0E0E0;
+            --text-secondary: #A0A0A0;
+            --sidebar-width: 220px;
+        }
         body {
-            background: linear-gradient(120deg, #181c24 0%, #23283a 100%);
-            color: #e0e0e0;
+            background: var(--bg);
+            color: var(--text);
             font-family: 'Roboto', Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            overflow-x: hidden;
+            margin: 0; padding: 0;
+            min-height: 100vh;
         }
         .sidebar {
-            position: fixed;
-            left: 0; top: 0; bottom: 0;
-            width: 220px;
-            background: #10131a;
-            border-right: 2px solid #00ffe7;
-            display: flex;
-            flex-direction: column;
+            position: fixed; left: 0; top: 0; bottom: 0;
+            width: var(--sidebar-width);
+            background: var(--panel);
+            border-right: 2px solid var(--primary);
+            display: flex; flex-direction: column;
             z-index: 10;
-            box-shadow: 0 0 32px #00ffe7a0;
-            animation: sidebar-glow 2s infinite alternate;
+            transition: width 0.3s;
         }
-        @keyframes sidebar-glow {
-            0% { box-shadow: 0 0 32px #00ffe7a0; }
-            100% { box-shadow: 0 0 64px #00ffe7cc; }
-        }
+        .sidebar.collapsed { width: 60px; }
         .sidebar h1 {
             font-family: 'Orbitron', sans-serif;
-            color: #00ffe7;
+            color: var(--primary);
             text-align: center;
             margin: 30px 0 20px 0;
-            font-size: 26px;
+            font-size: 2rem;
             letter-spacing: 2px;
-            text-shadow: 0 0 8px #00ffe7, 0 0 16px #00ffe7a0;
         }
         .sidebar nav {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            margin-top: 40px;
+            display: flex; flex-direction: column; gap: 10px; margin-top: 30px;
         }
         .sidebar nav a {
-            color: #e0e0e0;
-            text-decoration: none;
-            font-size: 1.1rem;
-            padding: 12px 30px;
+            color: var(--text-secondary); text-decoration: none;
+            font-size: 1.1rem; padding: 12px 24px 12px 18px;
             border-left: 4px solid transparent;
-            transition: all 0.2s, background 0.5s;
+            display: flex; align-items: center; gap: 12px;
             border-radius: 0 16px 16px 0;
+            transition: all 0.2s;
             position: relative;
-            overflow: hidden;
         }
         .sidebar nav a.active, .sidebar nav a:hover {
-            color: #00ffe7;
-            border-left: 4px solid #00ffe7;
-            background: linear-gradient(90deg, #23283a 60%, #00ffe720 100%);
-            box-shadow: 0 0 16px #00ffe7a0;
+            color: var(--primary);
+            border-left: 4px solid var(--primary);
+            background: #23232b;
         }
-        .sidebar nav a:before {
-            content: '';
-            position: absolute;
-            left: 0; top: 0; bottom: 0;
-            width: 0;
-            background: #00ffe7;
-            opacity: 0.1;
-            transition: width 0.3s;
-            z-index: -1;
+        .sidebar nav a .fa-solid { font-size: 1.2rem; }
+        .sidebar .collapse-btn {
+            margin: 20px auto 0 auto; color: var(--primary); background: none; border: none;
+            font-size: 1.3rem; cursor: pointer; transition: color 0.2s;
         }
-        .sidebar nav a.active:before, .sidebar nav a:hover:before {
-            width: 100%;
+        .sidebar .collapse-btn:hover { color: var(--accent); }
+        .topbar {
+            position: fixed; left: var(--sidebar-width); right: 0; top: 0; height: 56px;
+            background: var(--panel); display: flex; align-items: center;
+            padding: 0 32px; z-index: 9; box-shadow: 0 2px 8px #0002;
         }
+        .sidebar.collapsed ~ .topbar { left: 60px; }
+        .topbar .search {
+            flex: 1; display: flex; align-items: center;
+        }
+        .topbar input[type="text"] {
+            background: #18181f; border: none; color: var(--text);
+            border-radius: 8px; padding: 8px 14px; font-size: 1rem;
+            margin-right: 18px; width: 220px;
+        }
+        .topbar .user {
+            display: flex; align-items: center; gap: 12px;
+        }
+        .topbar .user .fa-user-circle { font-size: 1.5rem; color: var(--primary); }
         .main {
-            margin-left: 220px;
-            padding: 30px 40px;
-            min-height: 100vh;
-            background: linear-gradient(120deg, #23283a 0%, #181c24 100%);
-            transition: background 0.5s;
-            animation: bg-move 10s linear infinite alternate;
+            margin-left: var(--sidebar-width); margin-top: 56px;
+            padding: 36px 40px 60px 40px; min-height: 100vh;
+            background: var(--bg);
+            transition: margin-left 0.3s;
         }
-        @keyframes bg-move {
-            0% { background-position: 0 0; }
-            100% { background-position: 100vw 100vh; }
+        .sidebar.collapsed ~ .main { margin-left: 60px; }
+        .statusbar {
+            position: fixed; left: var(--sidebar-width); right: 0; bottom: 0; height: 36px;
+            background: #18181f; color: var(--text-secondary);
+            display: flex; align-items: center; padding: 0 24px; font-size: 0.95rem;
+            border-top: 1px solid #23232b; z-index: 11;
         }
-        /* Neon-glow buttons and inputs */
-        button, input[type="file"], input[type="text"], input[type="number"], textarea, select {
-            background: #181c24;
-            border: 1px solid #00ffe7;
-            color: #e0e0e0;
-            border-radius: 8px;
-            padding: 8px 12px;
-            font-size: 1rem;
-            margin: 4px 0;
-            box-shadow: 0 0 8px #00ffe7a0;
-            transition: box-shadow 0.2s, border 0.2s;
+        .sidebar.collapsed ~ .statusbar { left: 60px; }
+        .morph-section { display: none; }
+        .morph-section.active { display: block; animation: fadein 0.5s; }
+        @keyframes fadein { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+        .card {
+            background: var(--panel); border-radius: 14px; box-shadow: 0 2px 12px #0003;
+            padding: 22px 28px; margin-bottom: 24px;
+            transition: box-shadow 0.2s, transform 0.2s;
         }
-        button:hover, input[type="file"]:hover, input[type="text"]:hover, input[type="number"]:hover, textarea:focus, select:focus {
-            border: 1.5px solid #00ffe7;
-            box-shadow: 0 0 16px #00ffe7cc;
-            outline: none;
+        .card:hover { box-shadow: 0 4px 24px #D7263140; transform: translateY(-4px) scale(1.01); }
+        .neon-btn {
+            background: var(--primary); color: #fff; border: none; border-radius: 8px;
+            padding: 8px 18px; font-size: 1rem; font-family: 'Orbitron', sans-serif;
+            cursor: pointer; box-shadow: 0 0 12px #D7263180;
+            transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.2s;
+            position: relative; overflow: hidden;
         }
-        /* Custom scrollbars */
-        ::-webkit-scrollbar {
-            width: 10px;
-            background: #23283a;
+        .neon-btn:active { background: var(--alert); color: #fff; }
+        .neon-btn:hover { background: var(--accent); color: #18181f; box-shadow: 0 0 24px #00B8D9cc; transform: scale(1.04); }
+        .empty-state { color: #A0A0A0; margin-top: 20px; text-align: center; font-size: 1.1rem; letter-spacing: 1px; opacity: 0.8; }
+        .agents-grid, #screenshots-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px; }
+        .agent-card, #files-list li, #stager-list li {
+            background: #23232b; border-radius: 14px; box-shadow: 0 0 12px #D7263140;
+            padding: 20px; margin-bottom: 18px; font-family: 'Fira Mono', monospace;
+            display: flex; flex-direction: column; gap: 8px;
         }
-        ::-webkit-scrollbar-thumb {
-            background: #00ffe7a0;
-            border-radius: 8px;
+        .agent-card .status-badge {
+            display: inline-block; padding: 2px 10px; border-radius: 8px; font-size: 0.95rem;
+            background: #222; color: #fff; margin-left: 8px;
         }
-        /* Animated section transitions */
-        .main > div {
-            opacity: 0;
-            transform: translateY(20px);
-            pointer-events: none;
-            transition: opacity 0.5s, transform 0.5s;
-            position: absolute;
-            width: calc(100vw - 260px);
-            min-height: 80vh;
-            left: 220px;
-            top: 80px;
-            z-index: 1;
-        }
-        .main > div[style*='display: block'] {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-            position: relative;
-            z-index: 2;
-        }
-        /* Loading spinner for empty states */
-        .spinner {
-            border: 4px solid #23283a;
-            border-top: 4px solid #00ffe7;
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            animation: spin 1s linear infinite;
-            margin: 30px auto;
-            display: block;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        /* Responsive grid for agents/files/screenshots */
-        .agents-grid, #screenshots-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 30px;
-        }
-        #files-list, #stager-list {
-            margin: 20px 0;
-            padding: 0;
-            list-style: none;
-        }
-        #files-list li, #stager-list li {
-            background: #23283a;
-            border-radius: 10px;
-            margin: 8px 0;
-            padding: 10px 18px;
-            box-shadow: 0 0 8px #00ffe7a0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            transition: box-shadow 0.2s;
-        }
-        #files-list li:hover, #stager-list li:hover {
-            box-shadow: 0 0 16px #00ffe7cc;
-        }
-        /* Modal overlays for forms and previews */
-        .modal {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(24,28,36,0.97);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: fadein 0.4s;
-        }
-        @keyframes fadein {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        .modal-content {
-            background: #23283a;
-            border-radius: 16px;
-            box-shadow: 0 0 24px #00ffe7a0;
-            padding: 32px 40px;
-            min-width: 350px;
-            max-width: 90vw;
-            max-height: 80vh;
-            overflow-y: auto;
-            color: #e0e0e0;
-            position: relative;
-        }
-        .close-modal {
-            position: absolute;
-            top: 24px;
-            right: 40px;
-            font-size: 2rem;
-            color: #00ffe7;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-        .close-modal:hover {
-            color: #ff007f;
-        }
+        .status-online { background: #00B8D9; color: #18181f; }
+        .status-offline { background: #D72631; color: #fff; }
+        .agent-actions button { margin-right: 8px; }
+        .results-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(30,30,30,0.97); z-index: 1000; display: none; align-items: center; justify-content: center; }
+        .results-modal.active { display: flex; }
+        .results-content { background: #23232b; border-radius: 16px; box-shadow: 0 0 24px #D7263180; padding: 32px 40px; min-width: 350px; max-width: 90vw; max-height: 80vh; overflow-y: auto; color: #E0E0E0; position: relative; }
+        .close-modal { position: absolute; top: 24px; right: 40px; font-size: 2rem; color: var(--primary); cursor: pointer; transition: color 0.2s; }
+        .close-modal:hover { color: var(--alert); }
         @media (max-width: 700px) {
             .main { padding: 10px; margin-left: 0; }
-            .sidebar { width: 100vw; height: 60px; flex-direction: row; align-items: center; top: unset; left: 0; right: 0; bottom: unset; border-right: none; border-bottom: 2px solid #00ffe7; }
+            .sidebar { width: 100vw; height: 60px; flex-direction: row; align-items: center; top: unset; left: 0; right: 0; bottom: unset; border-right: none; border-bottom: 2px solid var(--primary); }
             .sidebar h1 { font-size: 1.2rem; margin: 0 10px; }
             .sidebar nav { flex-direction: row; gap: 10px; margin-top: 0; }
             .main > div { left: 0; width: 100vw; }
-        }
-        /* Morphing section animation */
-        .morph-section {
-            transition: clip-path 0.7s cubic-bezier(.77,0,.18,1), opacity 0.7s, transform 0.7s;
-            clip-path: circle(0% at 50% 50%);
-            opacity: 0;
-            transform: scale(0.98) rotateX(8deg);
-        }
-        .morph-section[style*='display: block'], .morph-section.morph-in {
-            clip-path: circle(120% at 50% 50%);
-            opacity: 1;
-            transform: scale(1) rotateX(0);
+            .statusbar { left: 0; }
         }
     </style>
 </head>
@@ -262,6 +171,11 @@
             <a href="#" data-section="stager"><i class="fa-solid fa-bolt"></i> Stager</a>
             <a href="#" data-section="settings"><i class="fa-solid fa-gear"></i> Settings</a>
         </nav>
+        <button class="collapse-btn" title="Collapse Sidebar" onclick="toggleSidebar()"><i class="fa-solid fa-angle-double-left"></i></button>
+    </div>
+    <div class="topbar">
+        <div class="search"><input type="text" placeholder="Search agents/files..." id="search-bar"><i class="fa-solid fa-search"></i></div>
+        <div class="user"><i class="fa-solid fa-user-circle"></i> <span>RedTeam</span></div>
     </div>
     <div class="main">
         <div id="agents-section" class="morph-section">
@@ -312,6 +226,9 @@
             <h2>Agent Results</h2>
             <div id="modal-results"></div>
         </div>
+    </div>
+    <div class="statusbar">
+        <span id="status-connection">Connected</span> &nbsp;|&nbsp; <span id="status-agents">Agents: 0</span> &nbsp;|&nbsp; <span id="status-lastcmd">Last Cmd: --</span>
     </div>
     <script>
         const socket = io();
