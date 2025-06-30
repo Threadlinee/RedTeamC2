@@ -143,6 +143,29 @@
             .main > div { left: 0; width: 100vw; }
             .statusbar { left: 0; }
         }
+        .tour-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(30,30,30,0.7); z-index: 9999; display: flex; align-items: center; justify-content: center;
+        }
+        .tour-step {
+            background: #23232b; color: #E0E0E0; border-radius: 12px; box-shadow: 0 4px 32px #D7263180;
+            padding: 32px 36px; max-width: 340px; font-size: 1.1rem; position: relative;
+            display: flex; flex-direction: column; align-items: center;
+            animation: fadein 0.4s;
+        }
+        .tour-step .tour-title {
+            color: #D72631; font-family: 'Orbitron', sans-serif; font-size: 1.2rem; margin-bottom: 10px;
+        }
+        .tour-step .tour-next {
+            margin-top: 22px; background: #D72631; color: #fff; border: none; border-radius: 8px;
+            padding: 8px 22px; font-size: 1rem; cursor: pointer; font-family: 'Orbitron', sans-serif;
+            box-shadow: 0 0 12px #D7263180; transition: background 0.2s;
+        }
+        .tour-step .tour-next:hover { background: #00B8D9; color: #18181f; }
+        .tour-highlight {
+            position: absolute; z-index: 10000; border-radius: 10px; box-shadow: 0 0 0 4px #D72631cc, 0 0 32px #D7263180;
+            pointer-events: none; transition: all 0.3s;
+        }
     </style>
 </head>
 <body>
@@ -165,11 +188,11 @@
     <div class="sidebar">
         <h1><i class="fa-solid fa-shield-halved"></i> RedTeamC2</h1>
         <nav>
-            <a href="#" class="active" data-section="agents"><i class="fa-solid fa-users"></i> Agents</a>
-            <a href="#" data-section="files"><i class="fa-solid fa-file-arrow-up"></i> Files</a>
-            <a href="#" data-section="screenshots"><i class="fa-solid fa-image"></i> Screenshots</a>
-            <a href="#" data-section="stager"><i class="fa-solid fa-bolt"></i> Stager</a>
-            <a href="#" data-section="settings"><i class="fa-solid fa-gear"></i> Settings</a>
+            <a href="#" class="sidebar-link active" id="nav-agents" data-section="agents"><i class="fa-solid fa-users"></i> Agents</a>
+            <a href="#" class="sidebar-link" id="nav-files" data-section="files"><i class="fa-solid fa-folder-open"></i> Files</a>
+            <a href="#" class="sidebar-link" id="nav-screenshots" data-section="screenshots"><i class="fa-solid fa-image"></i> Screenshots</a>
+            <a href="#" class="sidebar-link" id="nav-stager" data-section="stager"><i class="fa-solid fa-cubes"></i> Stager</a>
+            <a href="#" class="sidebar-link" id="nav-settings" data-section="settings"><i class="fa-solid fa-gear"></i> Settings</a>
         </nav>
         <button class="collapse-btn" title="Collapse Sidebar" onclick="toggleSidebar()"><i class="fa-solid fa-angle-double-left"></i></button>
     </div>
@@ -178,12 +201,12 @@
         <div class="user"><i class="fa-solid fa-user-circle"></i> <span>RedTeam</span></div>
     </div>
     <div class="main">
-        <div id="agents-section" class="morph-section">
+        <div id="agents-section" class="morph-section active">
             <h2 style="font-family: 'Orbitron', sans-serif; color: #00ffe7;">Agents</h2>
             <div class="agents-grid" id="agents"></div>
             <div id="agents-empty" style="display:none;color:#888;margin-top:20px;">No agents connected.</div>
         </div>
-        <div id="files-section" class="morph-section" style="display:none">
+        <div id="files-section" class="morph-section">
             <h2>Files</h2>
             <form id="file-upload-form">
                 <input type="file" name="file" required>
@@ -192,12 +215,12 @@
             <ul id="files-list"></ul>
             <div id="files-empty" style="display:none;color:#888;margin-top:20px;">No files uploaded.</div>
         </div>
-        <div id="screenshots-section" class="morph-section" style="display:none">
+        <div id="screenshots-section" class="morph-section">
             <h2>Screenshots</h2>
             <div id="screenshots-list"></div>
             <div id="screenshots-empty" style="display:none;color:#888;margin-top:20px;">No screenshots available.</div>
         </div>
-        <div id="stager-section" class="morph-section" style="display:none">
+        <div id="stager-section" class="morph-section">
             <h2>Stager</h2>
             <form id="stager-upload-form">
                 <input type="file" name="payload" required>
@@ -210,7 +233,7 @@
             <select id="stager-payload-select"></select>
             <button onclick="sendStagerTask()">Send Stager</button>
         </div>
-        <div id="settings-section" class="morph-section" style="display:none">
+        <div id="settings-section" class="morph-section">
             <h2>Settings</h2>
             <form onsubmit="saveSettings(event)">
                 <label>Jitter Min (s): <input id="jitter-min" type="number" min="1"></label><br>
@@ -327,15 +350,15 @@
             }
             expand();
         }
-        document.querySelectorAll('.sidebar nav a').forEach(a=>{
-            a.onclick = e=>{
+        document.querySelectorAll('.sidebar-link').forEach(a=>{
+            a.addEventListener('click', e=>{
                 e.preventDefault();
                 const toSection = a.dataset.section;
                 const fromSection = sections.find(s=>document.getElementById(s+'-section').style.display==='block');
                 if (fromSection !== toSection) {
                     morphTransition(fromSection, toSection, a);
                 }
-            };
+            });
         });
         // Files section
         function loadFiles() {
@@ -449,6 +472,54 @@
         loadScreenshots();
         loadStagerList();
         loadSettings();
+        // Product Tour Logic
+        if (!localStorage.getItem('rtc2_tour_done')) {
+            const tourSteps = [
+                { el: '#nav-agents', title: 'Agents', text: 'View and manage all connected agents. See status, details, and interact with them.' },
+                { el: '#nav-files', title: 'Files', text: 'Browse, upload, and download files from agents or the server.' },
+                { el: '#nav-screenshots', title: 'Screenshots', text: 'View screenshots captured from agents.' },
+                { el: '#nav-stager', title: 'Stager', text: 'Generate and manage stager payloads for initial access.' },
+                { el: '#nav-settings', title: 'Settings', text: 'Configure server, OPSEC, and UI preferences.' }
+            ];
+            let step = 0;
+            let overlay, stepBox, highlight;
+            function showStep() {
+                // Remove previous
+                if (overlay) overlay.remove();
+                if (highlight) highlight.remove();
+                // Highlight element
+                const el = document.querySelector(tourSteps[step].el);
+                if (el) {
+                    const rect = el.getBoundingClientRect();
+                    highlight = document.createElement('div');
+                    highlight.className = 'tour-highlight';
+                    highlight.style.top = (rect.top - 6 + window.scrollY) + 'px';
+                    highlight.style.left = (rect.left - 6 + window.scrollX) + 'px';
+                    highlight.style.width = (rect.width + 12) + 'px';
+                    highlight.style.height = (rect.height + 12) + 'px';
+                    document.body.appendChild(highlight);
+                }
+                // Overlay and step box
+                overlay = document.createElement('div');
+                overlay.className = 'tour-overlay';
+                stepBox = document.createElement('div');
+                stepBox.className = 'tour-step';
+                stepBox.innerHTML = `<div class='tour-title'>${tourSteps[step].title}</div><div>${tourSteps[step].text}</div><button class='tour-next'>${step < tourSteps.length-1 ? 'Next' : 'Finish'}</button>`;
+                overlay.appendChild(stepBox);
+                document.body.appendChild(overlay);
+                stepBox.querySelector('.tour-next').onclick = () => {
+                    step++;
+                    if (step < tourSteps.length) {
+                        showStep();
+                    } else {
+                        overlay.remove();
+                        if (highlight) highlight.remove();
+                        localStorage.setItem('rtc2_tour_done', '1');
+                    }
+                };
+            }
+            setTimeout(showStep, 600);
+        }
     </script>
 </body>
 </html> 
